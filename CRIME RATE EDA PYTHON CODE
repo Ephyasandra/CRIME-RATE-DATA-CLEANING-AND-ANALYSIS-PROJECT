@@ -1,0 +1,172 @@
+# Importing my libraries for the Exploratory Data Analysis-EDA
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Using Pandas to read the Crime rate Dataset
+Crime_data = pd.read_csv("C:/Users/DELL/Desktop/PROJECTS/Crime Rate Dataset/Crime Rate Dataset.csv")
+
+# The shape of the crime data set 
+Crime_data.shape
+# Check for duplicate rows
+duplicate_rows = Crime_data.duplicated().sum()
+print(f"Number of duplicate rows: {duplicate_rows}")
+
+#Understanding the data
+Crime_data.tail()
+Crime_data.describe()
+Crime_data.nunique()
+Crime_data.head()
+Crime_data.dtypes
+Crime_data.columns
+
+#Preparing my dataset
+#Finding the number of null values in the Crime dataset
+Crime_data.isnull().sum()
+
+#Removed the Code of Modes as well as Crime code 1 because we have crime code)
+Crimedata= Crime_data.drop(['Code of Modes', 'Crime Code 1'], axis=1)
+Crimedata.head()
+Crimedata.isnull().sum()
+
+#Removed the suffix of the Data Reported No. 
+Crimedata['Data Reported No.'] = Crimedata['Data Reported No.'].str[3:]
+Crimedata.head()
+
+#Substitution of Values in the Victim Sex column
+Crimedata['Victim Sex'] = Crimedata['Victim Sex'].replace({ 'F': 'Female','M': 'Male', 'X':'Unspecified',  'H':'Non-Binary'})
+Crimedata.iloc[:, Crimedata.columns.get_loc('Victim Sex')]
+Crimedata.head()
+
+
+#Substitution of Values in the Case Status column
+Crimedata['Case Status'] = Crimedata['Case Status'].replace({
+    'Adult Other': 'Adult Arrest',
+    'Juv Other': 'Juvenile Arrest',
+    'UNK': 'Unknown'
+})
+
+Crimedata.iloc[:, Crimedata.columns.get_loc('Case Status')]
+Crimedata.head()
+
+#Substitution of Values in the Weapon Description column
+Crimedata['Weapon Description'] = Crimedata['Weapon Description'].replace({ 'UNKNOWN': 'UNIDENTIFIED WEAPON', 'UNKNOWN WEAPON/OTHER WEAPON':'UNIDENTIFIED WEAPON','SEMI-AUTOMATIC PISTOL' :'HAND GUN','OTHER KNIFE' : 'KNIFE', 'KNIFE WITH BLADE 6INCHES OR LESS':'KNIFE'})
+Crimedata.iloc[:, Crimedata.columns.get_loc('Weapon Description'),]
+Crimedata.head()
+
+# Ensuring that the I have the year from the date the crime occured
+Crimedata['Date Occurred'] = pd.to_datetime(Crimedata['Date Occurred'], errors='coerce')
+Crimedata['Year'] = Crimedata['Date Occurred'].dt.year
+
+# Create a heatmap to visualize victim sex distribution across the years
+Pivot_data = Crimedata.groupby(['Year', 'Victim Sex']).size().unstack().fillna(0)
+
+# Create a figure with specified size
+plt.figure(figsize=(12,8))
+
+# Generate heatmap with Blues color map, annotations, and general format
+sns.heatmap(Pivot_data, cmap='Blues', annot=True, fmt='g')
+
+#Labelling of Graph
+plt.title('Victim Sex Across the Years (Heatmap)', fontsize=15)
+plt.xlabel('Victim Sex', fontsize=14)
+plt.ylabel('Year' " (2020 to 2024)" , fontsize=14)
+
+# Displaying the plot
+plt.show()
+
+
+# Ensuring that the I have the year from the date the crime occured
+Crimedata['Date Occurred'] = pd.to_datetime(Crimedata['Date Occurred'], errors='coerce')
+Crimedata['Year'] = Crimedata['Date Occurred'].dt.year
+
+# Group by 'Year' and 'Case Status' and count occurrences
+case_status_year = Crimedata.groupby(['Year', 'Case Status']).size().reset_index(name='Count')
+
+# Plot the bar chart and labeling
+plt.figure(figsize=(15, 9))
+plt.rcParams['font.family'] = 'Times New Roman'
+sns.barplot(x='Year', y='Count', hue='Case Status', data=case_status_year,  palette= 'viridis')
+plt.title('Case Status Across Each Year')
+plt.xlabel('Year Crime Occured2020 to 2024',fontsize=14,fontname='Times New Roman')
+plt.ylabel('Number of Cases',fontsize=14, fontname= 'Times New Roman')
+plt.legend(title='Case Status')
+plt.show()
+
+# Convert 'Date Occurred' to datetime format
+Crimedata['Date Occurred'] = pd.to_datetime(Crimedata['Date Occurred'])
+
+# Extract the year from 'Date Occurred'
+Crimedata['Year'] = Crimedata['Date Occurred'].dt.year
+
+# Grouping by 'Year' and 'Crime Description' to count occurrences
+crime_counts_per_year = Crimedata.groupby(['Year', 'Crime Description']).size().reset_index(name='Count')
+
+# Finding the most common crime for each year
+most_common_crime_per_year = crime_counts_per_year.loc[crime_counts_per_year.groupby('Year')['Count'].idxmax()]
+
+# Sorting the data to display bars in ascending order of year
+most_common_crime_per_year = most_common_crime_per_year.sort_values(by='Year')
+
+# Visualise most common crimes per year
+plt.figure(figsize=(12, 6))
+sns.barplot(x='Year', y='Count', hue='Crime Description', data=most_common_crime_per_year, palette='cubehelix', dodge=False)
+plt.title('Top Crime with the Highest Occurrence per Year in Los Angeles', fontsize=16)
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.xlabel('Year', fontsize=14, fontname='Times New Roman')
+plt.ylabel('Number of Crimes', fontsize=14, fontname='Times New Roman')
+plt.xticks(rotation=45)
+plt.legend(title='Crime Description', bbox_to_anchor=(1.10, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+# Group by 'Weapon Description' and count occurrences
+weapon_counts = Crimedata['Weapon Description'].value_counts().reset_index()
+
+# Renaming columns for clarity
+weapon_counts.columns = ['Weapon Description', 'Count']  
+
+# Display the most commonly used weapon
+most_common_weapon = weapon_counts.iloc[0]
+print(f"The most common weapon used is: {most_common_weapon['Weapon Description']} with {most_common_weapon['Count']} occurrences")
+
+# Visualize the top 10 most commonly used weapons
+plt.figure(figsize=(15, 8))
+sns.barplot(x='Count', y='Weapon Description', data=weapon_counts.head(10), palette='viridis')
+
+# Add titles and labels
+plt.title('Top 10 Most Commonly Used Weapons in Crimes', fontsize=18)
+plt.xlabel('Total Number of weapons', fontsize=16)
+plt.ylabel('Weapon Used (Description)', fontsize=16)
+
+# Show the plot
+plt.show()
+
+# Ensure 'Date Occurred' is in datetime format
+Crimedata['Date Occurred'] = pd.to_datetime(Crimedata['Date Occurred'], errors='coerce')
+
+# Filter the dataset for crimes that occurred between 2020 and 2024
+filtered_data = Crimedata[(Crimedata['Date Occurred'].dt.year >= 2020) & (Crimedata['Date Occurred'].dt.year <= 2024)]
+
+# Group by 'Area Name' and count occurrences of crimes
+crime_by_area = filtered_data['Area Name'].value_counts().reset_index()
+crime_by_area.columns = ['Area Name', 'Crime Count']  # Renaming columns for clarity
+
+# Get the top 5 areas with the highest crime rate
+top_5_areas = crime_by_area.head(5)
+
+# Display the area with the highest crime rate
+print("Top 5 areas with the highest crime rate from 2020 to 2024:")
+print(top_5_areas)
+
+# Visualize the top 5 areas with the highest crime rates
+plt.figure(figsize=(12, 6))
+sns.barplot(x='Crime Count', y='Area Name', data=top_5_areas, palette='magma')
+
+# Add titles and labels
+plt.title('Top 5 Areas with the Highest Crime Rate (2020-2024)', fontsize=16)
+plt.xlabel('Crime Count', fontsize=14)
+plt.ylabel('Area Name', fontsize=14)
+
+# Show the plot
+plt.show()
